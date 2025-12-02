@@ -1,0 +1,296 @@
+---
+title: "Trabalho Final ME720/MI419"
+author: "Rodrigo Caldiron"
+date: "2025-10-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Bibliotecas usadas
+library(skewlmm)
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+```{r}
+db1 <- skewlmm::UTIdata # HIV
+db2 <- skewlmm::miceweight # peso do rato
+```
+
+```{r}
+# trajetórias
+db2 %>%
+  mutate(treat = case_when(
+    treat == "C" ~ "Controle",
+    treat == "T1" ~ "Tratamento 1",
+    treat == "T2" ~ "Tratamento 2"
+  )) %>%
+  ggplot(aes(x = week, y = weight, group = mouseID)) +
+  geom_line(alpha = 0.6, color = "gray70") +
+  stat_summary(
+    aes(group = 1),
+    fun = mean,
+    geom = "line",
+    size = 1.2,
+    color = "black"
+  ) +
+  facet_wrap(~treat) +
+  labs(x = "Semana", y = "Peso (g)") +
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10))
+ggsave("trajetorias.pdf", height = 5, width = 7)
+```
+
+```{r}
+# modelos usando dist normal (sem ser assimétrica com lambda = 0)
+modelo1 <- smn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "CI",
+  distr = "norm",
+  control = lmmControl(quiet = TRUE)
+)
+
+modelo2 <- smn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "ARp",
+  distr = "norm",
+  control = lmmControl(quiet = TRUE), pAR = 1
+)
+
+modelo3 <- smn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "DEC",
+  distr = "norm",
+  control = lmmControl(quiet = TRUE)
+)
+
+criteria(list(`NORMAL CI` = modelo1, 
+              `NORMAL AR(1)` = modelo2, 
+              `NORMAL DEC` = modelo3)) 
+```
+
+
+
+```{r}
+# considerando skewnormal (lambda != 0)
+modelo4 <- smsn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "CI",
+  distr = "sn",  # distribuição NORMAL assimétrica
+  control = lmmControl(quiet = TRUE)
+)
+```
+
+```{r}
+modelo5 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "CI",
+  distr = "st",
+  control = lmmControl(quiet = TRUE))
+```
+
+```{r}
+modelo6 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "CI",
+  distr = "ssl",
+  control = lmmControl(quiet = TRUE))
+```
+
+```{r}
+modelo7 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "CI",
+  distr = "scn",
+  control = lmmControl(quiet = TRUE))
+```
+
+```{r}
+modelo8 <- smsn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "ARp",
+  distr = "sn",  # distribuição NORMAL assimétrica
+  control = lmmControl(quiet = TRUE),
+  pAR = 1
+)
+
+modelo9 <- smsn.lmm(
+  data = db2,
+  formFixed = weight ~ week + treat,
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "DEC",
+  distr = "sn",  # distribuição NORMAL assimétrica
+  control = lmmControl(quiet = TRUE)
+)
+
+modelo10 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "ARp",
+  distr = "st",
+  control = lmmControl(quiet = TRUE),
+  pAR = 1)
+
+modelo11 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "DEC",
+  distr = "st",
+  control = lmmControl(quiet = TRUE))
+
+modelo12 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "ARp",
+  distr = "ssl",
+  control = lmmControl(quiet = TRUE),
+  pAR = 1)
+
+modelo13 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "DEC",
+  distr = "ssl",
+  control = lmmControl(quiet = TRUE))
+
+modelo14 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "ARp",
+  distr = "scn",
+  control = lmmControl(quiet = TRUE),
+  pAR = 1)
+
+modelo15 <- smsn.lmm(
+  data = db2, 
+  formFixed = weight ~ week + treat, 
+  formRandom = ~ 1,
+  groupVar = "mouseID",
+  depStruct = "DEC",
+  distr = "scn",
+  control = lmmControl(quiet = TRUE))
+```
+
+
+
+```{r}
+criterio <- criteria(list(`SN CI` = modelo4,
+              `SN AR(1)` = modelo8, 
+              `SN DEC` = modelo9,
+              `ST CI` = modelo5,
+              `ST AR(1)` = modelo10,
+              `ST DEC` = modelo11,
+              `SSL CI` = modelo6,
+              `SSL AR(1)` = modelo12,
+              `SSL DEC` = modelo13,
+              `SCN CI` = modelo7,
+              `SCN AR(1)` = modelo14,
+              `SCN DEC` = modelo15))
+
+which.min(criterio$AIC)
+which.min(criterio$BIC)
+criterio[c(which.min(criterio$AIC), which.min(criterio$BIC)),]
+```
+
+
+
+```{r}
+# É PRECISO DO PARAMETRO DE ASSIMETRIA? PRECISA DE MODELOS ANINHADOS (MESMA DEPSTRUCT)
+lr.test(modelo2, modelo14)
+```
+
+```{r}
+# modelo final com base no AIC/BIC
+summary(modelo14)
+plot(modelo14) +
+  theme_bw() +
+  labs(x = "Valores ajustados", y = "Resíduos condicionais brutos", title = "")# resíduos vs ajustados
+#ggsave("residuoxvalorajustado.pdf", height = 5, width = 7)
+acf1<- acfresid(modelo14, calcCI = TRUE)
+plot(acf1) +
+  theme_bw() +
+  labs(title = "", x = "Defasagem")
+#ggsave("lag.pdf", height = 5, width = 7)
+plot(mahalDist(modelo14), nlabels = 2) +
+  labs(title = "", x = "Índice", y = "Distância de Mahalanobis") +
+  theme_bw()# 103, 150 
+#ggsave("mahalanobis.pdf", height = 5, width = 7)
+
+healy.plot(modelo14, calcCI = TRUE, dotsize = 1) +
+  labs(x = "Quantis teóricos", y = "Quantis observados") +
+  theme_bw()
+#ggsave("healyplotmodeloscn.pdf", height = 5, width = 7)
+healy.plot(modelo2, calcCI = TRUE, dotsize = 1) +
+  labs(x = "Quantis teóricos", y = "Quantis observados") +
+  theme_bw()
+#ggsave("healyplotmodelonormal.pdf", height = 5, width = 7)
+```
+
+```{r}
+fitted_vals <- fitted(modelo14)
+pred_vals <- predict(modelo14)
+dados_plot  <- modelo14$data
+
+df_plot <- dados_plot %>%
+  mutate(
+    Fitted = fitted_vals,
+    Predicted = pred_vals
+  )
+df_plot
+
+set.seed(123)
+ratos_exemplo <- sample(unique(df_plot$mouseID), 6)
+
+# Filtra apenas os escolhidos
+df_exemplo <- df_plot %>%
+  filter(mouseID %in% ratos_exemplo)
+
+ggplot(df_exemplo, aes(x = week)) +
+  geom_line(aes(y = weight, group = 1), color = "black") +
+  geom_line(aes(y = Fitted, group = 1), color = "black", linetype = "dashed") +
+  geom_point(aes(y = Predicted), shape = 8, color = "red") +
+  geom_point(aes(y = weight), shape = 1, color = "black") +
+  facet_wrap(~ mouseID, scales = "free_y") +
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+  labs(y = "Peso (g)", x = "Semana")
+#ggsave("predicaorandom.pdf", height = 5, width = 7)
+```
+
